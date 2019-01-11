@@ -144,7 +144,7 @@ module SpreeAvatax::SalesShared
     def gettax_params(order, doc_type)
       {
         doccode:       order.number,
-        customercode:  order.user_id,
+        customercode:  customer_code(order),
         companycode:   SpreeAvatax::Config.company_code,
 
         doctype: doc_type,
@@ -171,6 +171,10 @@ module SpreeAvatax::SalesShared
 
         lines: gettax_lines_params(order),
       }
+    end
+
+    def customer_code(order)
+      order.user ? order.user_id : REXML::Text.normalize(order.email)[0, 50]
     end
 
     def gettax_lines_params(order)
