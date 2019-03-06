@@ -174,7 +174,13 @@ module SpreeAvatax::SalesShared
     end
 
     def customer_code(order)
-      order.user ? order.user_id : REXML::Text.normalize(order.email)[0, 50]
+      if (order.user)
+        order.user_id
+      elsif order.email
+        REXML::Text.normalize(order.email)[0, 50]
+      else
+        "guest-#{order.number}"
+      end
     end
 
     def gettax_lines_params(order)
