@@ -28,6 +28,7 @@ module SpreeAvatax::SalesShared
     def adjust_tax(order, adjustment_reason, doc_type)
       params = gettax_params(order, doc_type)
       params[:adjustmentreason] = adjustment_reason
+      params[:commit] = true
 
       logger.info "[avatax] adjusttax order=#{order.id} doc_type=#{doc_type}"
       logger.debug { "[avatax] params: #{params.to_json}" }
