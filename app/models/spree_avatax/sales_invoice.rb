@@ -14,6 +14,44 @@ class SpreeAvatax::SalesInvoice < ActiveRecord::Base
   validates :doc_date, presence: true
 
   class << self
+    def adjust(order, adjustment_reason)
+      avatax_sales_invoice = order.avatax_sales_invoice
+      return unless avatax_sales_invoice.try(:committed_at).present?
+
+      result = SpreeAvatax::SalesShared.adjust_tax(order, adjustment_reason, DOC_TYPE)
+      tax_line_data = SpreeAvatax::SalesShared.build_tax_line_data(order, result)
+      tax_line_data.each do |data|
+        record, tax_line = data[:record], data[:tax_line]
+
+        tax = BigDecimal.new(tax_line[:tax]).abs
+
+        tax_adjustment = record.adjustments.
+          where(source: Spree::TaxRate.avatax_the_one_rate).
+          first_or_initialize
+
+        tax_adjustment.update_attributes!(
+          amount:     tax,
+          order:      order,
+          label:      Spree.t(:avatax_label),
+          included:   false,
+          finalized:  true
+        )
+
+        Spree::ItemAdjustments.new(record).update
+        record.save!
+      end
+      order.update!
+
+      avatax_sales_invoice.update!(
+        transaction_id:        result[:transaction_id],
+        doc_id:                result[:doc_id],
+        doc_code:              result[:doc_code],
+        doc_date:              result[:doc_date],
+        pre_tax_total:         result[:total_amount],
+        additional_tax_total:  result[:total_tax],
+      )
+    end
+
     # Calls the Avatax API to generate a sales invoice and calculate taxes on the line items.
     # On failure it will raise.
     # On success it updates taxes on the order and its line items and create a SalesInvoice record.
