@@ -132,7 +132,7 @@ class SpreeAvatax::ReturnInvoice < ActiveRecord::Base
       {
         doccode:       reimbursement.number,
         referencecode: reimbursement.order.number,
-        customercode:  reimbursement.order.user_id,
+        customercode:  customer_code(reimbursement.order),
         companycode:   SpreeAvatax::Config.company_code,
 
         doctype: DOC_TYPE,
@@ -157,6 +157,16 @@ class SpreeAvatax::ReturnInvoice < ActiveRecord::Base
 
         lines: get_tax_line_params(reimbursement),
       }
+    end
+
+    def customer_code(order)
+      if (order.user)
+        order.user_id
+      elsif order.email
+        REXML::Text.normalize(order.email)[0, 50]
+      else
+        "guest-#{order.number}"
+      end
     end
 
     def get_tax_line_params(reimbursement)

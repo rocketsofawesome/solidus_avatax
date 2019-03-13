@@ -72,7 +72,7 @@ class SpreeAvatax::ShortShipReturnInvoice < ActiveRecord::Base
       {
         doccode:       "#{order.number}-short-#{Time.now.to_f}",
         referencecode: order.number,
-        customercode:  order.user_id,
+        customercode:  customer_code(order),
         companycode:   SpreeAvatax::Config.company_code,
 
         doctype: DOC_TYPE,
@@ -92,6 +92,16 @@ class SpreeAvatax::ShortShipReturnInvoice < ActiveRecord::Base
 
         lines: lines,
       }
+    end
+
+    def customer_code(order)
+      if (order.user)
+        order.user_id
+      elsif order.email
+        REXML::Text.normalize(order.email)[0, 50]
+      else
+        "guest-#{order.number}"
+      end
     end
 
     def gettax_line_params(unit_cancels:, taxed_at:)
