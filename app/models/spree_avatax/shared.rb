@@ -32,6 +32,10 @@ module SpreeAvatax::Shared
       call_tax_svc_with_timeout(:gettax, params)
     end
 
+    def adjust_tax(params)
+      call_tax_svc_with_timeout(:adjusttax, params)
+    end
+
     def post_tax(params)
       call_tax_svc_with_timeout(:posttax, params)
     end
