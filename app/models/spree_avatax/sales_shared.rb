@@ -180,6 +180,7 @@ module SpreeAvatax::SalesShared
             line2:       REXML::Text.normalize(order.ship_address.address2),
             city:        REXML::Text.normalize(order.ship_address.city),
             postalcode:  REXML::Text.normalize(order.ship_address.zipcode),
+            region:      REXML::Text.normalize(order.ship_address.state)
           },
         ],
 
