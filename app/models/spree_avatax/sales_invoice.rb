@@ -58,7 +58,16 @@ class SpreeAvatax::SalesInvoice < ActiveRecord::Base
     #   At this point the record is saved but uncommitted on Avatax's end.
     # After the order completes the ".commit" method will get called and we'll commit the
     #   sales invoice, which marks it as complete on Avatax's end.
-    def generate(order)
+    #
+    # skip_nexus_address_check explanation:
+    # On quark we have monkey patched SpreeAvatax::Shared.taxable_order to only return true if the
+    # orders state is in our list of taxable states (TAX_NEXUS_STATES)
+    #
+    # On occassion we need to use SalesInvoice.generate to calculate the proper order total. This
+    # skip_nexus_address_check param will allow for clearing out previous calculations on an order
+    # when the state is not in our list of taxable states. (ie: changing shipping address from
+    # taxable to non-taxable state would need to zero out tax calculations)
+    def generate(order, skip_nexus_address_check = false)
       bench_start = Time.now
 
       if !SpreeAvatax::Config.enabled
@@ -66,7 +75,8 @@ class SpreeAvatax::SalesInvoice < ActiveRecord::Base
         return
       end
 
-      return if order.completed? || !SpreeAvatax::Shared.taxable_order?(order)
+      return if order.completed?
+      return unless SpreeAvatax::Shared.taxable_order?(order) || skip_nexus_address_check
 
       result = SpreeAvatax::SalesShared.get_tax(order, DOC_TYPE)
       # run this immediately to ensure that everything matches up before modifying the database
