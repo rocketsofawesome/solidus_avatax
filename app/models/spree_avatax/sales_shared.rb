@@ -40,7 +40,7 @@ module SpreeAvatax::SalesShared
     end
 
     def update_taxes(order, tax_line_data)
-      reset_tax_attributes(order)
+      reset_tax_attributes(order, skip_order_update: true)
 
       tax_line_data.each do |data|
         record, tax_line = data[:record], data[:tax_line]
@@ -57,7 +57,6 @@ module SpreeAvatax::SalesShared
           finalized:  true, # this tells spree not to automatically recalculate avatax tax adjustments
         })
 
-        Spree::ItemAdjustments.new(record).update
         record.save!
       end
 
@@ -108,7 +107,7 @@ module SpreeAvatax::SalesShared
     # order has already been completed.
     #
     # @param order [Spree::Order] the order
-    def reset_tax_attributes(order)
+    def reset_tax_attributes(order, skip_order_update: false)
       return if order.completed?
 
       # Delete the avatax_sales_invoice to avoid accidentally committing it
@@ -123,8 +122,9 @@ module SpreeAvatax::SalesShared
         end
       end
 
-      destroyed_adjustments = order.all_adjustments.tax.destroy_all
-      return if destroyed_adjustments.empty?
+      tax_adjustments = order.all_adjustments.tax
+      return if tax_adjustments.empty?
+      tax_adjustments.delete_all
 
       taxable_records = order.line_items + order.shipments
       taxable_records.each do |taxable_record|
@@ -134,7 +134,6 @@ module SpreeAvatax::SalesShared
           included_tax_total: 0,
         })
 
-        Spree::ItemAdjustments.new(taxable_record).update
         taxable_record.save!
       end
 
@@ -144,7 +143,7 @@ module SpreeAvatax::SalesShared
         included_tax_total: 0,
       })
 
-      order.update!
+      order.update! unless skip_order_update
       order.save!
     end
 
