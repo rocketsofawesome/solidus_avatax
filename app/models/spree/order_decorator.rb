@@ -20,6 +20,11 @@ Spree::Order.class_eval do
     SpreeAvatax::SalesInvoice.cancel(order)
   end
 
+  def origin_address
+    shipment = shipments.where.not(stock_location_id: nil).first
+    shipment&.stock_location || Spree::StockLocation.where(default: true).first
+  end
+
   # The total of discounts and charges added at the order level.
   # This intentionally excludes line item & shipment level discounts as those are sent to avatax
   # by being wrapped into net amount of the line item/shipment itself.

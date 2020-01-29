@@ -1,6 +1,7 @@
 module SpreeAvatax::SalesShared
 
   DESTINATION_CODE = "1"
+  ORIGIN_CODE = "2"
 
   SHIPPING_TAX_CODE = 'FR020100' # docs: http://goo.gl/KuIuxc
 
@@ -181,6 +182,14 @@ module SpreeAvatax::SalesShared
             postalcode:  REXML::Text.normalize(order.ship_address.zipcode),
             region:      REXML::Text.normalize(order.ship_address.state)
           },
+          {
+            addresscode: ORIGIN_CODE,
+            line1:       REXML::Text.normalize(order.origin_address.address1),
+            line2:       REXML::Text.normalize(order.origin_address.address2),
+            city:        REXML::Text.normalize(order.origin_address.city),
+            postalcode:  REXML::Text.normalize(order.origin_address.zipcode),
+            region:      REXML::Text.normalize(order.origin_address.state)
+          }
         ],
 
         lines: gettax_lines_params(order),
@@ -206,7 +215,7 @@ module SpreeAvatax::SalesShared
           no:                  avatax_id(line_item),
           qty:                 line_item.quantity,
           amount:              line_item.discounted_amount.round(2).to_f,
-          origincodeline:      DESTINATION_CODE, # We don't really send the correct value here
+          origincodeline:      ORIGIN_CODE,
           destinationcodeline: DESTINATION_CODE,
 
           # Best Practice Parameters
@@ -227,7 +236,7 @@ module SpreeAvatax::SalesShared
           no:                  avatax_id(shipment),
           qty:                 1,
           amount:              shipment.discounted_amount.round(2).to_f,
-          origincodeline:      DESTINATION_CODE, # We don't really send the correct value here
+          origincodeline:      ORIGIN_CODE, # We don't really send the correct value here
           destinationcodeline: DESTINATION_CODE,
 
           # Best Practice Parameters
